@@ -31,6 +31,9 @@
 #include "_base.h"
 #include "gzstream.h"
 
+#ifdef WITH_OPENGM
+#include <opengm/utilities/indexing.hxx>
+#endif
 namespace daoopt {
 
 /* holds a problem instance with variable domains and function tables */
@@ -100,6 +103,12 @@ public:
 
   /* parses a UAI format input file */
   bool parseUAI(const string& prob, const string& evid);
+
+#ifdef WITH_OPENGM
+  /* convert OpenGM model */
+  template <class GM>
+  bool convertOPENGM(const GM& gm);
+#endif
 
   /* writes the current problem to a UAI file */
   void writeUAI(const string& prob) const;
@@ -194,6 +203,122 @@ inline Problem::~Problem() {
     for (vector<Function*>::iterator it = m_functions.begin(); it!= m_functions.end(); ++it)
       if (*it) delete (*it);
 }
+
+#ifdef WITH_OPENGM
+/* convert OpenGM model */
+template <class GM>
+inline bool Problem::convertOPENGM(const GM& gm) {
+  typedef typename GM::FactorType::ShapeIteratorType FactorShapeIteratorType;
+
+  vector<int> arity;
+  vector<vector<int> > scopes;
+  string s;
+  int x,y;
+  val_t xs;
+  unsigned int z;
+
+  m_task = TASK_MAX;
+  m_prob = PROB_MULT;
+
+  m_n = gm.numberOfVariables();
+  m_domains.resize(m_n,UNKNOWN);
+
+  m_k = -1;
+  for (int i=0; i<m_n; ++i) { // Domain sizes
+	x = gm.numberOfLabels(i);
+	if (x > numeric_limits<val_t>::max()) {
+	 cerr << "Domain size " << x << " out of range for internal representation.\n"
+		  << "(Recompile with different type for variable values.)" << endl;
+	}
+	xs = (val_t)x;
+	m_domains[i] = xs;
+	m_k = max(m_k,xs);
+  }
+  x = gm.numberOfFactors();
+  m_c = x;
+  scopes.reserve(m_c);
+
+  // Scope information for functions
+  m_r = -1;
+  for (int i = 0; i < m_c; ++i)
+  {
+	vector<int> scope;
+	x = gm[i].numberOfVariables(); // arity
+
+	m_r = max(m_r, x);
+	for (int j=0; j<x; ++j) {
+	  y=gm[i].variableIndex(j); // the actual variables in the scope
+	  if(y>=m_n) {
+		cerr << "Variable index " << y << " out of range." << endl;
+	  }
+		scope.push_back(y); // preserve order from file
+	  }
+	  scopes.push_back(scope);
+  }
+
+  // Read functions
+  for (int i = 0; i < m_c; ++i)
+  {
+	z=gm[i].size(); // No. of entries
+	size_t tab_size = 1;
+
+	for (vector<int>::iterator it=scopes[i].begin(); it!=scopes[i].end(); ++it) {
+	  tab_size *= m_domains[*it];
+	}
+
+	assert(tab_size==z); // product of domain sizes matches no. of entries
+
+	// create set version of the scope (ordered)
+	set<int> scopeSet(scopes[i].begin(), scopes[i].end());
+	z = scopeSet.size();
+
+	// compute reindexing map from specified scope to ordered, internal one
+	map<int,int> mapping; int k=0;
+	for (vector<int>::const_iterator it=scopes[i].begin(); it!=scopes[i].end(); ++it)
+	  mapping[*it] = k++;
+	vector<int> reidx(z);
+	vector<int>::iterator itr = reidx.begin();
+	for (set<int>::iterator it=scopeSet.begin(); itr!=reidx.end(); ++it, ++itr) {
+	  *itr = mapping[*it];
+	}
+
+	// read the full table into an temp. array (to allow reordering)
+	vector<double> temp(tab_size);
+	opengm::ShapeWalkerSwitchedOrder<FactorShapeIteratorType> shapeWalker(gm[i].shapeBegin(),gm[i].numberOfVariables());
+	//opengm::ShapeWalker<FactorShapeIteratorType> shapeWalker(gm[i].shapeBegin(),gm[i].numberOfVariables());
+	for(typename GM::IndexType scalarIndex=0;scalarIndex<tab_size;++scalarIndex,++shapeWalker) {
+	  //temp[scalarIndex]=0.1+scalarIndex;
+	  temp[scalarIndex]=pow(10.0,-gm[i](shapeWalker.coordinateTuple().begin()));
+
+	  //temp[scalarIndex]=gm[i](shapeWalker.coordinateTuple().begin());
+	}
+
+	// get the variable domain sizes
+	vector<val_t> limit; limit.reserve(z);
+	for (vector<int>::const_iterator it=scopes[i].begin(); it!=scopes[i].end(); ++it)
+	  limit.push_back(m_domains[*it]);
+	vector<val_t> tuple(z, 0);
+
+	// create the new table (with reordering)
+	double* table = new double[tab_size];
+	for (size_t j=0; j<tab_size; ) {
+	  size_t pos=0, offset=1;
+	  // j is the index in the temp. table
+	  for (k=z-1; k>=0; --k) { // k goes backwards through the ordered scope
+		pos += tuple[reidx[k]] * offset;
+		offset *= m_domains[scopes[i][reidx[k]]];
+	  }
+	  table[pos] = ELEM_ENCODE( temp[j] );
+	  increaseTuple(j,tuple,limit);
+	}
+
+	Function* f = new FunctionBayes(i,this,scopeSet,table,tab_size);
+	m_functions.push_back(f);
+
+  } // All function tables read
+  return true;
+}
+#endif
 
 }  //
 

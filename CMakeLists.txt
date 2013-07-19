@@ -12,6 +12,9 @@ option(DAOOPT_MASTER_DYNAMIC "Force dynamic master binary" OFF)
 # To enable static linking of the final daoopt binary
 option(DAOOPT_LINK_STATIC "Link binary statically" OFF)
 
+# To enable support for OpenGM
+option(DAOOPT_WITH_OPENGM "Enable support for OpenGM" OFF)
+
 # General Compiler flags
 add_definitions(-Wall)
 
@@ -95,6 +98,24 @@ set(FILES
   ./source/utils.cpp
 )
 
+# add OpenGM includes
+if(DAOOPT_WITH_OPENGM)
+  SET(OPENGM_INCLUDE_DIR OPENGM_INCLUDE_DIR-NOTFOUND CACHE STRING "Set OpenGM include dir")
+  include_directories( ${OPENGM_INCLUDE_DIR} )
+  add_definitions(-DWITH_OPENGM)
+  
+  # add hdf5  
+  find_package(HDF5 REQUIRED)
+  include_directories(${HDF5_INCLUDE_DIR})
+  add_definitions(${HDF5_CPPFLAGS})
+  add_definitions(-DWITH_HDF5)
+endif(DAOOPT_WITH_OPENGM)
+
 # Main executable and library dependencies
 add_executable(daoopt daoopt.cpp ${FILES})
 target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY} )
+
+if(DAOOPT_WITH_OPENGM)
+  # link hdf5 library
+  target_link_libraries(daoopt ${HDF5_LIBRARIES})
+endif(DAOOPT_WITH_OPENGM)
