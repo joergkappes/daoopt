@@ -12,6 +12,9 @@ option(DAOOPT_MASTER_DYNAMIC "Force dynamic master binary" OFF)
 # To enable static linking of the final daoopt binary
 option(DAOOPT_LINK_STATIC "Link binary statically" OFF)
 
+# To enable support for OpenGM
+option(DAOOPT_WITH_OPENGM "Enable support for OpenGM" OFF)
+
 # General Compiler flags
 add_definitions(-Wall)
 
@@ -94,6 +97,13 @@ set(FILES
   ./source/SubprobStats.cpp
   ./source/utils.cpp
 )
+
+# add OpenGM includes
+if(DAOOPT_WITH_OPENGM)
+    SET(OPENGM_INCLUDE_DIR OPENGM_INCLUDE_DIR-NOTFOUND CACHE STRING "Set OpenGM include dir")
+    include_directories( ${OPENGM_INCLUDE_DIR} )
+    add_definitions(-DWITH_OPENGM)
+endif(DAOOPT_WITH_OPENGM)
 
 # Main executable and library dependencies
 add_executable(daoopt daoopt.cpp ${FILES})
