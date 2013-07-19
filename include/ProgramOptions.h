@@ -88,6 +88,9 @@ public:
   std::string out_reducedFile; // file to save reduced network to
   std::string out_pstFile; // file to output pseudo tree description to (for plotting)
 
+#ifdef WITH_OPENGM
+  std::string datasetOpenGM; // dataset of model stored in hdf5 file
+#endif
 public:
   ProgramOptions();
 };

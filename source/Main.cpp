@@ -23,6 +23,9 @@
 
 #include "Main.h"
 
+#ifdef WITH_OPENGM
+#include "OpenGMModelType.h"
+#endif
 #define VERSIONINFO "1.1.2"
 
 namespace daoopt {
@@ -54,8 +57,26 @@ bool Main::loadProblem() {
   m_problem.reset(new Problem);
 
   // load problem file
+#ifdef WITH_OPENGM
+  if(!m_options->datasetOpenGM.empty()) {
+	// m_options->in_problemFile is an OpenGM model
+	// load model
+	opengm::OpenGMModelType::GmType gm;
+	opengm::hdf5::load(gm, m_options->in_problemFile, m_options->datasetOpenGM);
+
+	// convert model
+    if (!m_problem->convertOPENGM(gm))
+	  return false;
+  } else {
+    if (!m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile))
+	  return false;
+  }
+
+#else
   if (!m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile))
     return false;
+#endif
+
   cout << "Created problem with " << m_problem->getN()
        << " variables and " << m_problem->getC() << " functions." << endl;
 
