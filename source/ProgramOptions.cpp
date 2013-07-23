@@ -95,6 +95,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #endif
       ("pst-file", po::value<string>(), "path to output the pseudo tree to, for plotting")
       ("help,h", "produces this help message")
+#ifdef WITH_OPENGM
+      ("datasetOpenGM", po::value<string>(), "input-file is an openGM model file with specified dataset")
+#endif
       ;
 
     po::variables_map vm;
@@ -220,6 +223,11 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->nocaching = true;
     else
       opt->nocaching = false;
+
+#ifdef WITH_OPENGM
+    if (vm.count("datasetOpenGM"))
+      opt->datasetOpenGM = vm["datasetOpenGM"].as<string>();
+#endif
 
     if (vm.count("rotate"))
       opt->rotate = true;
