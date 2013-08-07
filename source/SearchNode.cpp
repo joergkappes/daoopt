@@ -100,4 +100,8 @@ string SearchNode::toString(const SearchNode* n) {
   return ss.str();
 }
 
+// static member initialization
+context_t SearchNodeAND::emptyCtxt;
+std::list<std::pair<double,double> > SearchNodeAND::emptyPSTList;
+
 }  // namespace daoopt
