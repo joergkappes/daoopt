@@ -782,6 +782,52 @@ bool Main::outputInfo() const {
  return true;
 }
 
+// getter / setter
+void Main::setOptions(ProgramOptions* options) {
+  if (options->seed == NONE)
+    options->seed = time(0);
+  rand::seed(options->seed);
+  m_options.reset(options);
+}
+
+void Main::setProblem(Problem* problem) {
+  m_problem.reset(problem);
+
+  cout << "Created problem with " << m_problem->getN()
+       << " variables and " << m_problem->getC() << " functions." << endl;
+
+  // Remove evidence variables
+  m_problem->removeEvidence();
+  cout << "Removed evidence, now " << m_problem->getN()
+       << " variables and " << m_problem->getC() << " functions." << endl;
+
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  if (!m_options->par_solveLocal) {
+    // Re-output problem file for parallel processing
+    m_options->out_reducedFile = string("temp_prob.") + m_options->problemName
+        + string(".") + m_options->runTag + string(".gz");
+    m_problem->writeUAI(m_options->out_reducedFile);
+    cout << "Saved problem to file " << m_options->out_reducedFile << endl;
+  }
+#else
+  // Output reduced network?
+  if (!m_options->out_reducedFile.empty()) {
+    cout << "Writing reduced network to file " << m_options->out_reducedFile << endl;
+    m_problem->writeUAI(m_options->out_reducedFile);
+  }
+#endif
+
+  // Some statistics
+  cout << "Global constant:\t" << SCALE_LOG(m_problem->globalConstInfo()) << endl;
+  cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
+  cout << "Max. function arity:\t" << m_problem->getR() << endl;
+
+}
+
+const Problem& Main::getProblem() const {
+  return *m_problem;
+}
+
 }  // namespace daoopt
 
 // EoF
