@@ -102,6 +102,11 @@ public:
 
   Main();
 
+  // getter / setter
+  void setOptions(ProgramOptions* options); // takes ownership of input
+  void setProblem(Problem* problem); // takes ownership of input
+  const Problem& getProblem() const;
+
 };
 
 /* Inline implementations */
