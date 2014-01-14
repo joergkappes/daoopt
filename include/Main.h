@@ -101,7 +101,8 @@ public:
   bool compileHeuristic();
   bool runLDS();
   bool finishPreproc();
-  bool runSearch();
+  bool runSearch(); 
+  template<class VISITOR> bool runSearch(VISITOR& v);
   bool outputStats() const;
 
   bool isSolved() const { return m_solved; }
@@ -135,6 +136,16 @@ inline bool Main::runSearch() {
   Visitor v;
   return runSearchWorker(v);
 #endif
+}
+
+template<class VISITOR>
+inline bool Main::runSearch(VISITOR& v) {
+  if (m_options->nosearch)
+    return true;
+  if (m_solved)
+    return true;
+  cout << "--- Starting search ---" << endl;
+  return runSearchWorker(v);
 }
 
 }  // namespace daoopt
