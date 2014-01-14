@@ -635,16 +635,18 @@ bool Main::runSearchWorker(VisitorBase& v) {
   while (n) {
     prop.propagate(n, true); // true = report solutions
     n = m_search->nextLeaf();
-    double value = n->getValue();
-    if( count==10000 || (!(value!=value) && (value>best))){
-       best = value;
-       if(!v.visit()){
-          return true;// visitor force termination 
+    if(n){
+       double value = n->getValue();
+       if( count==10000 || (!(value!=value) && (value>best))){
+          best = value;
+          if(!v.visit()){
+             return true;// visitor force termination 
+          }
+          count = 0;
        }
-       count = 0;
-    }
-    else{
-       ++count;
+       else{
+          ++count;
+       }
     }
   }
   m_solved = true;
