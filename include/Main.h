@@ -58,7 +58,7 @@ namespace daoopt {
 
 class Visitor{
 public:
-   void visit() {};
+   bool visit() {return true;};
 };
 
 class Main {

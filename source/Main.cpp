@@ -634,7 +634,8 @@ bool Main::runSearchWorker(VISITOR& v) {
   while (n) {
     prop.propagate(n, true); // true = report solutions
     n = m_search->nextLeaf();
-    v.visit();
+    if(!v.visit())
+       return true;// visitor force termination 
   }
 
   m_solved = true;
