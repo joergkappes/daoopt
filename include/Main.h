@@ -133,8 +133,7 @@ inline bool Main::runSearch() {
 #elif defined PARALLEL_STATIC
   return runSearchStatic();
 #else
-  Visitor v;
-  return runSearchWorker(v);
+  return runSearchWorker();
 #endif
 }
 

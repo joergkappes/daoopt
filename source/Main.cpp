@@ -627,16 +627,26 @@ bool Main::runSearchWorker() {
   return true;
 }
 
-bool Main::runSearchWorker(VisitorBase& v) {
+bool Main::runSearchWorker(VisitorBase& v) { 
+  double best=-std::numeric_limits<double>::infinity();
+  size_t count = 0;
   BoundPropagator prop(m_problem.get(), m_space.get(), !m_options->nocaching);
   SearchNode* n = m_search->nextLeaf();
   while (n) {
     prop.propagate(n, true); // true = report solutions
     n = m_search->nextLeaf();
-    if(!v.visit())
-       return true;// visitor force termination 
+    double value = n->getValue();
+    if( count==10000 || (!(value!=value) && (value>best))){
+       best = value;
+       if(!v.visit()){
+          return true;// visitor force termination 
+       }
+       count = 0;
+    }
+    else{
+       ++count;
+    }
   }
-
   m_solved = true;
   return true;
 }
