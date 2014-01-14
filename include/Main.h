@@ -56,6 +56,11 @@
 
 namespace daoopt {
 
+class Visitor{
+public:
+   void visit() {};
+};
+
 class Main {
 protected:
   bool m_solved;
@@ -83,6 +88,7 @@ protected:
   bool runSearchDynamic();
   bool runSearchStatic();
   bool runSearchWorker();
+  template<class VISITOR>  bool runSearchWorker(VISITOR& v);
 
 public:
   bool start() const;
@@ -121,7 +127,8 @@ inline bool Main::runSearch() {
 #elif defined PARALLEL_STATIC
   return runSearchStatic();
 #else
-  return runSearchWorker();
+  Visitor v;
+  return runSearchWorker(v);
 #endif
 }
 

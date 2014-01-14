@@ -627,6 +627,20 @@ bool Main::runSearchWorker() {
   return true;
 }
 
+template<class VISITOR>
+bool Main::runSearchWorker(VISITOR& v) {
+  BoundPropagator prop(m_problem.get(), m_space.get(), !m_options->nocaching);
+  SearchNode* n = m_search->nextLeaf();
+  while (n) {
+    prop.propagate(n, true); // true = report solutions
+    n = m_search->nextLeaf();
+    v.visit();
+  }
+
+  m_solved = true;
+  return true;
+}
+
 
 bool Main::outputStats() const {
   if (m_options->nosearch) {
