@@ -56,9 +56,9 @@
 
 namespace daoopt {
 
-class Visitor{
+class VisitorBase{
 public:
-   bool visit() {return true;};
+   virtual bool visit() {return true;};
 };
 
 class Main {
@@ -88,7 +88,7 @@ protected:
   bool runSearchDynamic();
   bool runSearchStatic();
   bool runSearchWorker();
-  template<class VISITOR>  bool runSearchWorker(VISITOR& v);
+ bool runSearchWorker(VisitorBase& v);
 
 public:
   bool start() const;
@@ -102,7 +102,7 @@ public:
   bool runLDS();
   bool finishPreproc();
   bool runSearch(); 
-  template<class VISITOR> bool runSearch(VISITOR& v);
+  bool runSearch(VisitorBase& v);
   bool outputStats() const;
 
   bool isSolved() const { return m_solved; }
@@ -138,8 +138,7 @@ inline bool Main::runSearch() {
 #endif
 }
 
-template<class VISITOR>
-inline bool Main::runSearch(VISITOR& v) {
+inline bool Main::runSearch(VisitorBase& v) {
   if (m_options->nosearch)
     return true;
   if (m_solved)

@@ -627,8 +627,7 @@ bool Main::runSearchWorker() {
   return true;
 }
 
-template<class VISITOR>
-bool Main::runSearchWorker(VISITOR& v) {
+bool Main::runSearchWorker(VisitorBase& v) {
   BoundPropagator prop(m_problem.get(), m_space.get(), !m_options->nocaching);
   SearchNode* n = m_search->nextLeaf();
   while (n) {
