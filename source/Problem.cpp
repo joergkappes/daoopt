@@ -26,6 +26,10 @@
 #include <sstream>
 #include <fstream>
 
+#ifdef WITH_OPENGM
+#include <opengm/datastructures/marray/marray_hdf5.hxx> // for hdf5 support
+#endif
+
 namespace daoopt {
 
 //extern time_t time_start;
@@ -480,6 +484,41 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
   bool writeFile = false;
   if (! file.empty())
     writeFile = true;
+
+#ifdef WITH_OPENGM
+  // If WITH_OPENGM is defined and file ends with ".h5" the hdf5 output will be used insted of daoopt's own file format.
+  // Only the optimal value and its corresponding argument will be stored.
+
+  // chech file ending
+  bool useHDF5 = false;
+  if(file.size() > 3) {
+	  if(file.substr(file.size() - 3) == ".h5") {
+	    useHDF5 = true;
+	  }
+  }
+
+  if(useHDF5) {
+	  // disable daoopt's own file output
+    writeFile = false;
+
+    // create file
+    hid_t handle = marray::hdf5::createFile(file);
+
+    // store value
+    vector<double> value(1, m_curCost); // wrapper to use opengm build in hdf5 support
+    marray::hdf5::save(handle, "value", value);
+
+    // store argument
+
+    // TODO marray::hdf5::save does not support type signed char this will be fixed in opengm version 2.1.3
+    // marray::hdf5::save(handle, "states", m_curSolution);
+
+    // typecast of curSolution to support opengm versions below 2.1.3
+    // can be removed when the new opengm version is released.
+    vector<size_t> states(m_curSolution.begin(), m_curSolution.end());
+    marray::hdf5::save(handle, "states", states);
+  }
+#endif
 
   ogzstream out;
   if (writeFile) {
